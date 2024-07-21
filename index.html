@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シンプルチャット</title>
+    <title>Firebase リアルタイムチャット</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         #chat { border: 1px solid #ddd; padding: 10px; width: 300px; height: 300px; overflow-y: scroll; }
@@ -11,39 +11,47 @@
     </style>
 </head>
 <body>
-    <h1>シンプルチャット</h1>
+    <h1>リアルタイムチャット</h1>
     <div id="chat"></div>
     <input type="text" id="message" placeholder="メッセージを入力">
     <button onclick="sendMessage()">送信</button>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
     <script>
-        const chat = document.getElementById('chat');
-        const messageInput = document.getElementById('message');
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        function displayMessages() {
-            const messages = JSON.parse(localStorage.getItem('messages')) || [];
-            chat.innerHTML = '';
-            messages.forEach(msg => {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message';
-                messageElement.textContent = `${msg.name}: ${msg.text}`;
-                chat.appendChild(messageElement);
-            });
-        }
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const chatRef = database.ref('messages');
+
+        chatRef.on('child_added', function(snapshot) {
+            const message = snapshot.val();
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.textContent = `${message.name}: ${message.text}`;
+            document.getElementById('chat').appendChild(messageElement);
+            document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+        });
 
         function sendMessage() {
-            const message = messageInput.value;
-            const messages = JSON.parse(localStorage.getItem('messages')) || [];
-            messages.push({ name: 'User', text: message });
-            localStorage.setItem('messages', JSON.stringify(messages));
-            messageInput.value = '';
-            displayMessages();
+            const message = document.getElementById('message').value;
+            const name = "User"; // ゲストユーザーとして名前を設定
+            chatRef.push({
+                name: name,
+                text: message
+            });
+            document.getElementById('message').value = '';
         }
-
-        // 定期的にメッセージを表示する
-        setInterval(displayMessages, 1000);
-
-        displayMessages();
     </script>
 </body>
 </html>
